@@ -71,3 +71,54 @@ var etcher = {
     }
 
 };
+
+
+var bezierLine = function () {
+    var line = [0.5, 0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.2, 0.1, 0.3];
+    var startVertex = new pointXY(10, 10),
+        endVertex = new pointXY(10 + line.length + 1, 10),
+        goVertex = [],
+        returnVertex = [];
+    for (let i = 0, l = line.length; i < l; i++) {
+        let px = startVertex.x + i + 1;
+        let py = startVertex.y + line[i];
+        let p = new bezierControlPoint(px, py, px - line[i] / 2, py, px + line[i] / 2, py);
+        goVertex.push(p);
+        py = startVertex.y - line[i];
+        let pr = new bezierControlPoint(px, py, px + line[i] / 2, py, px - line[i] / 2, py);
+        returnVertex.unshift(pr);
+    }
+
+    this.getShape = function () {
+        let shape = [];
+
+        let vertex = [startVertex.x + .5, startVertex.y, goVertex[0].cp1.x, goVertex[0].cp1.y, goVertex[0].point.x, goVertex[0].point.y];
+        shape.push(vertex);
+        for (let i = 1, l = goVertex.length; i < l; i++) {
+            let v = goVertex[i], prev = goVertex[i - 1];
+            shape.push([prev.cp2.x, prev.cp2.y, v.cp1.x, v.cp1.y, v.point.x, v.point.y])
+        }
+        let lastVertex = goVertex[goVertex.length - 1];
+        shape.push([lastVertex.cp2.x, lastVertex.cp2.y, endVertex.x - .25, endVertex.y, endVertex.x, endVertex.y]);
+        shape.push([endVertex.x - .25, endVertex.y, returnVertex[0].cp1.x, returnVertex[0].cp1.y, returnVertex[0].point.x, returnVertex[0].point.y]);
+        for (let i = 1, l = returnVertex.length; i < l; i++) {
+            let v = returnVertex[i], prev = returnVertex[i - 1];
+            shape.push([prev.cp2.x, prev.cp2.y, v.cp1.x, v.cp1.y, v.point.x, v.point.y])
+        }
+        lastVertex = returnVertex[returnVertex.length - 1];
+        shape.push([lastVertex.cp2.x, lastVertex.cp2.y, startVertex.x + .5, startVertex.y, startVertex.x, startVertex.y]);
+
+        return {startVertex: startVertex, vertexes: shape};
+    }
+};
+
+var pointXY = function (x, y) {
+    this.x = x;
+    this.y = y;
+};
+
+var bezierControlPoint = function (x, y, cp1x, cp1y, cp2x, cp2y) {
+    this.point = new pointXY(x, y);
+    this.cp1 = new pointXY(cp1x, cp1y);
+    this.cp2 = new pointXY(cp2x, cp2y);
+};
