@@ -71,8 +71,16 @@ function drawRow(row) {
 }
 
 function mouseDragged() {
-    hScroll += (pwinMouseX - winMouseX) * (1 / root.zoom);
-    vScroll += (pwinMouseY - winMouseY) * (1 / root.zoom);
+    let lb = cnv.canvas.offsetLeft,
+        rb = cnv.canvas.offsetLeft + cnv.width,
+        tb = cnv.canvas.offsetTop,
+        bb = cnv.canvas.offsetTop + cnv.height;
+    if (mouseX > lb && mouseX < rb && mouseY > tb && mouseY < bb) {
+        hScroll += (pmouseX - mouseX) * (1 / root.zoom);
+        vScroll += (pmouseY - mouseY) * (1 / root.zoom);
+    } else {
+        return true;
+    }
 }
 
 function mouseWheel(event) {
