@@ -73,21 +73,32 @@ var etcher = {
 };
 
 
-var bezierLine = function () {
-    var line = [0.5, 0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.2, 0.1, 0.3];
-    var startVertex = new pointXY(10, 10),
-        endVertex = new pointXY(10 + line.length + 1, 10),
+var BezierLine = function (line, startPoint, width) {
+    width = width || 1;
+    line = line || [0.30, 0.47, 0.90, 0.59, 0.96, 0.63, 0.82, 0.46, 0.69, 0.38, 0.035, 0.088, 0.38, 0.87, 0.080, 0.45, 0.71, 0.84, 0.65, 0.43];
+    this.line = line;
+    this.rotations = [];
+    for (let l of line) {
+        this.rotations.append(0)
+    }
+    this.rotations[3] = 90;
+    startPoint = startPoint || new PointXY(0, 0);
+    let startVertex = new PointXY(startPoint.x, startPoint.y),
+        endVertex = new PointXY(startPoint.x + this.line.length * width + 1, startPoint.y),
         goVertex = [],
         returnVertex = [];
-    for (let i = 0, l = line.length; i < l; i++) {
-        let px = startVertex.x + i + 1;
-        let py = startVertex.y + line[i];
-        let p = new bezierControlPoint(px, py, px - line[i] / 2, py, px + line[i] / 2, py);
-        goVertex.push(p);
-        py = startVertex.y - line[i];
-        let pr = new bezierControlPoint(px, py, px + line[i] / 2, py, px - line[i] / 2, py);
-        returnVertex.unshift(pr);
-    }
+
+    this.calculate = function () {
+        for (let i = 0, l = this.line.length; i < l; i++) {
+            let px = startVertex.x + (i * width) + 1,
+                py = startVertex.y + this.line[i],
+                p = new BezierControlPoint(px, py, px - this.line[i] / 2, py, px + this.line[i] / 2, py);
+            py = startVertex.y - this.line[i];
+            let pr = new BezierControlPoint(px, py, px + this.line[i] / 2, py, px - this.line[i] / 2, py);
+            goVertex.push(p);
+            returnVertex.unshift(pr);
+        }
+    };
 
     this.getShape = function () {
         let shape = [];
@@ -109,16 +120,50 @@ var bezierLine = function () {
         shape.push([lastVertex.cp2.x, lastVertex.cp2.y, startVertex.x + .5, startVertex.y, startVertex.x, startVertex.y]);
 
         return {startVertex: startVertex, vertexes: shape};
-    }
+    };
+
+    this.calculate();
 };
 
-var pointXY = function (x, y) {
+var PointXY = function (x, y) {
+    let initialX = x,
+        initialY = y;
     this.x = x;
     this.y = y;
+    this.rotate = function (angle) {
+        let transformationMatrix = math.matrix([
+            [Math.cos(angle), -Math.sin(angle), 0],
+            [Math.sin(angle), Math.cos(angle), 0],
+            [0, 0, 1]
+        ]);
+        this.transformMatrix = math.multiply(transformationMatrix, this.transformMatrix);
+        return this;
+    };
+
+    this.rotateAroundPoint = function (angle, point) {
+        this.move({x: -point.x, y: -point.y}).rotate(angle).move(point);
+        return this;
+    };
+    this.matrix = function () {
+        return math.matrix([this.x, this.y, 1]);
+    };
+
+    this.move = function (delta) {
+        let transformationMatrix = math.matrix([[1, 0, delta.x], [0, 1, delta.y], [0, 0, 1]]);
+        this.transformMatrix = math.multiply(transformationMatrix, this.transformMatrix);
+        return this
+    };
+    this.applyTransform = function () {
+        let transformArray = this.transformMatrix.toArray();
+        this.x = transformArray[0];
+        this.y = transformArray[1]
+    };
+    this.transformMatrix = this.matrix();
+
 };
 
-var bezierControlPoint = function (x, y, cp1x, cp1y, cp2x, cp2y) {
-    this.point = new pointXY(x, y);
-    this.cp1 = new pointXY(cp1x, cp1y);
-    this.cp2 = new pointXY(cp2x, cp2y);
+var BezierControlPoint = function (x, y, cp1x, cp1y, cp2x, cp2y) {
+    this.point = new PointXY(x, y);
+    this.cp1 = new PointXY(cp1x, cp1y);
+    this.cp2 = new PointXY(cp2x, cp2y);
 };

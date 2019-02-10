@@ -22,21 +22,7 @@ function preload() {
 function createLines(imgArray) {
     let linesArray = [];
     for (let i = 0, l = imgArray.length; i < l; i++) {
-        let row = etcher.createRow(imgArray[i]);
-        row.startVertex.y += i;
-        row.endVertex.y += i;
-        for (let bez of row.beziers) {
-            bez[1] += i;
-            bez[3] += i;
-            bez[5] += i;
-        }
-        for (let bez of row.returnBeziers) {
-            bez[1] += i;
-            bez[3] += i;
-            bez[5] += i;
-        }
-
-        linesArray.push(row);
+        linesArray.push(new BezierLine(imgArray[i], {x: 10, y: i * 2}, 2))
     }
 
     return linesArray;
@@ -44,29 +30,18 @@ function createLines(imgArray) {
 
 var anotherCanvas;
 
-
-function drawRow(row) {
-    let startVertex = row.startVertex,
-        endVertex = row.endVertex,
-        returnBeziers = row.returnBeziers,
-        beziers = row.beziers;
+function drawRow(bez) {
+    let row = bez.getShape();
+    var startVertex = row.startVertex;
     strokeWeight(0);
     fill(lineColor);
     beginShape();
     vertex(startVertex.x, startVertex.y);
 
-    for (let bez of beziers) {
-        bezierVertex(...bez)
-    }
-    vertex(endVertex.x, endVertex.y);
-    for (let bez of returnBeziers) {
+    for (let bez of row.vertexes) {
         bezierVertex(...bez);
-        // root.debugCnv.drawPoint(bez[0], bez[1], [255, 0, 0])
     }
-
-    bezierVertex(startVertex.x, startVertex.y, startVertex.x, startVertex.y, startVertex.x, startVertex.y);
     endShape(CLOSE);
-    // root.debugCnv.drawLine(startVertex.x, startVertex.y, endVertex.x, endVertex.y, [244, 122, 158], true);
 
 }
 
@@ -150,9 +125,9 @@ function draw() {
     root.debugCnv.debug = debug;
     background(bg);
     // anotherCanvas.image(capture, 0, 0, 160, 120);
-    // imgArray = prepareImage(anotherCanvas, 2);
-    let imgArray = etcher.prepareImage(img, root.tones);
-    let rowsArray = createLines(imgArray);
+    // let imgArray = etcher.prepareImage(anotherCanvas, root.tones);
+    let imgArray = etcher.prepareImage(img, root.tones),
+        rowsArray = createLines(imgArray);
     root.debugCnv.setView(root.zoom, hScroll, vScroll);
     scale(root.zoom);
     translate(-hScroll, -vScroll);
